@@ -19,7 +19,7 @@ class JobRepository(BaseRepository):
         return obj
 
     async def update(self, job_id: int, job: JobIn):
-        values, obj = self.get_values(job_id, job)
+        values = self.get_values(job_id, job)
         values.pop('id', None)
         values.pop('created_at', None)
         query = jobs.update().where(jobs.c.id == job_id).values(**values)
@@ -30,9 +30,9 @@ class JobRepository(BaseRepository):
         query = jobs.select().where(jobs.c.id == job_id)
         obj = await self.database.fetch_one(query)
 
-        return Jobs.parse_obj(obj) if obj is not None else None
+        return Jobs.parse_obj(obj) if obj else None
 
-    async def list(self, limit: int = 100, skip: int = 0) -> List[Query]:
+    async def get_list(self, limit: int = 100, skip: int = 0) -> List[Query]:
         join_users = jobs.join(users, jobs.c.owner_id == users.c.id)
 
         user_column = (
@@ -58,4 +58,4 @@ class JobRepository(BaseRepository):
             owner_id=user_id,
             updated_at=datetime.datetime.utcnow()
         )
-        return {**obj.dict()}, obj
+        return {**obj.dict()}

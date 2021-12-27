@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from repositories.users import UserRepository
 from models.users import User, UserIn
-from endpoints.depends import get_user_repository, get_current_users
+from endpoints.depends import get_user_repository, get_current_user
 from schemas.users import ViewUser
 
 router = APIRouter()
@@ -30,11 +30,16 @@ async def create(
 @router.put('/', response_model=ViewUser)
 async def update(
         id: int,
-        user: UserIn,
+        user_data: UserIn,
         users: UserRepository = Depends(get_user_repository),
-        current_user: User = Depends(get_current_users)
+        current_user: User = Depends(get_current_user)
 ):
-    old_user = await users.get_by_id(id_=id)
-    if old_user is None or old_user.email != current_user.email:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found user")
-    return await users.update(id_=id, u=user)
+    user = await users.get_by_id(id_=id)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found user!")
+
+    if user.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied!")
+
+    return await users.update(id_=id, u=user_data)
