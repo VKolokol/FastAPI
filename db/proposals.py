@@ -19,6 +19,7 @@ proposals = sqlalchemy.Table(
     sqlalchemy.UniqueConstraint('user_id', 'job_id', name='uix_1'),
     sqlalchemy.Column('in_process', sqlalchemy.Boolean, default=True, nullable=False),
     sqlalchemy.Column("status", sqlalchemy.String, nullable=True),
+    sqlalchemy.Column('in_archive', sqlalchemy.Boolean, default=False),
     sqlalchemy.Column('created_at', sqlalchemy.DateTime, default=datetime.datetime.utcnow()),
     sqlalchemy.Column('updated_at', sqlalchemy.DateTime, default=datetime.datetime.utcnow()),
 )
