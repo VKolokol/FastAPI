@@ -1,10 +1,11 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Response, status
 
 from repositories.users import UserRepository
+from permissions.get_permissions import Permissions
 from models.users import User, UserIn
-from endpoints.depends import get_user_repository, get_current_user
+from endpoints.depends import get_user_repository, get_current_user, get_permissions
 from schemas.users import ViewUser
 
 router = APIRouter()
@@ -20,26 +21,38 @@ async def read_users(
 
 
 @router.post('/', response_model=ViewUser)
-async def create(
+async def create_user(
         user: UserIn,
         users: UserRepository = Depends(get_user_repository)
 ):
     return await users.create(u=user)
 
 
-@router.put('/', response_model=ViewUser)
-async def update(
-        id: int,
+@router.patch('/{user_id}', response_model=ViewUser)
+async def update_user(
+        user_id: int,
         user_data: UserIn,
         users: UserRepository = Depends(get_user_repository),
-        current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user),
+        permissions: Permissions = Depends(get_permissions)
 ):
-    user = await users.get_by_id(id_=id)
+    user = await users.get_object(user_id=user_id)
 
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found user!")
+    permissions.get_permission(obj=user, user=current_user, user_id=user_id)
 
-    if user.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied!")
+    return await users.update(user_id=user_id, u=user_data)
 
-    return await users.update(id_=id, u=user_data)
+
+@router.delete('/{user_id}')
+async def deactivate_user(
+        user_id: int,
+        users: UserRepository = Depends(get_user_repository),
+        current_user: User = Depends(get_current_user),
+        permissions: Permissions = Depends(get_permissions)
+):
+    user = await users.get_object(user_id=user_id)
+
+    permissions.get_permission(obj=user, user=current_user, user_id=user_id)
+
+    await users.remove(user_id=user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
