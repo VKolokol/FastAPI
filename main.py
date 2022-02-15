@@ -5,6 +5,7 @@ from db.base import database
 from endpoints import users
 from endpoints import auth
 from endpoints import jobs
+from endpoints import proposals
 
 
 app = FastAPI()
@@ -12,6 +13,7 @@ app = FastAPI()
 app.include_router(users.router)
 app.include_router(auth.router, prefix='/auth')
 app.include_router(jobs.router, prefix='/jobs')
+app.include_router(proposals.router, prefix='/proposal')
 
 
 @app.on_event('startup')
